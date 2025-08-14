@@ -1,0 +1,25 @@
+# requirements.txt
+# Telegram Bot API
+python-telegram-bot==20.0
+
+# Database
+sqlalchemy>=2.0.15
+asyncpg>=0.27.0
+psycopg2-binary>=2.9.6  # Для PostgreSQL (если используется)
+
+# Redis
+redis>=4.5.5
+aioredis>=2.0.1
+
+# Payment Integration
+yookassa>=2.5.0
+
+# HTTP Requests
+aiohttp>=3.8.4
+
+# Data Validation
+pydantic>=2.0.0  # Обновленная версия для Python 3.11
+
+# Additional Dependencies
+typing_extensions>=4.5.0  # Для поддержки новых типов
+cryptography>=41.0.0      # Для работы с шифрованием
