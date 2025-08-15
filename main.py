@@ -7,7 +7,7 @@ from telegram.ext import (
     ConversationHandler,
     filters
 )
-from handlers.registration import start_registration, get_sport, get_role, save_profile, confirm_profile
+from handlers.registration import start_registration, get_sport, get_role, save_profile, confirm_profile_or_propose_game
 from handlers.game_proposals import game_proposals_handler
 from handlers.partner_search import partner_search_handler
 from handlers.match_results import match_results_handler
@@ -15,6 +15,10 @@ from handlers.subscription import subscription_handler
 from config import settings
 import os
 from database.models import init_db
+from handlers.game_proposals import (
+    start_game_proposal, get_city, get_district, get_date, get_time,
+    get_game_type, get_payment, save_game_proposal, filter_game_proposals
+)
 
 # Убедитесь, что папка для хранения фото существует
 PHOTOS_DIR = "user_photos"
@@ -33,7 +37,7 @@ def main():
             0: [CallbackQueryHandler(get_sport)],
             1: [CallbackQueryHandler(get_role)],
             2: [MessageHandler(filters.PHOTO & ~filters.COMMAND, save_profile)],
-            3: [CallbackQueryHandler(confirm_profile)]
+            3: [CallbackQueryHandler(confirm_profile_or_propose_game)]
         },
         fallbacks=[]
     )

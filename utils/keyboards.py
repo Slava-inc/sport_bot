@@ -82,3 +82,10 @@ class Keyboards:
         """Кнопка 'Назад'."""
         keyboard = [[InlineKeyboardButton("Назад", callback_data=callback_data)]]
         return InlineKeyboardMarkup(keyboard)
+    
+@staticmethod
+def get_game_proposal_filters():
+    """Клавиатура фильтров для предложений игр."""
+    filters = ["По виду спорта", "По уровню игрока", "По времени игры"]
+    keyboard = [[InlineKeyboardButton(filter_option, callback_data=f"filter_{filter_option}")] for filter_option in filters]
+    return InlineKeyboardMarkup(keyboard)    

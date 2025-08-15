@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, Boolean, Table, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -9,11 +9,19 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+# Таблица для связи пользователей и видов спорта
+user_sports = Table(
+    "user_sports",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("sport", String, primary_key=True)
+)
+
 # Модель пользователя
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    telegram_id = Column(String, unique=True, index=True)  # Уникальный ID Telegram
+    telegram_id = Column(String, unique=False, index=True)  # Уникальный ID Telegram
     sport = Column(String, nullable=False)  # Вид спорта
     role = Column(String, nullable=False)  # Роль: Игрок или Тренер
     photo_path = Column(String, nullable=True)  # Путь к фото профиля
@@ -21,6 +29,15 @@ class User(Base):
     rating_points = Column(Integer, default=500)  # Рейтинговые очки
     subscription = Column(Boolean, default=False)  # Подписка (PRO или нет)
 
+    game_proposals = relationship("GameProposal", back_populates="user")
+    # Связь с видами спорта
+    sports = relationship("UserSport", secondary=user_sports, back_populates="users")
+    # Составной уникальный индекс для telegram_id и sport
+    __table_args__ = (
+        UniqueConstraint('telegram_id', 'sport', name='uix_telegram_id_sport'),
+    )
+
+    
 # Модель предложения игры
 class GameProposal(Base):
     __tablename__ = "game_proposals"
@@ -34,6 +51,11 @@ class GameProposal(Base):
     payment = Column(String, nullable=False)  # Оплата (Пополам, Я оплачиваю корт и т.д.)
     comment = Column(String, nullable=True)  # Комментарий
     published = Column(Boolean, default=True)  # Опубликовано ли предложение
+    created_at = Column(DateTime, server_default="CURRENT_TIMESTAMP")  # Дата создания
+    matches_played = Column(Integer, default=0)  # Количество сыгранных матчей
+    matches_won = Column(Integer, default=0)  # Количество побед
+
+    user = relationship("User", back_populates="game_proposals")
 
 # Модель тура
 class Tour(Base):

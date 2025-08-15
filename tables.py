@@ -26,8 +26,18 @@ def init_db():
 def save_to_database(user_data):
     db = SessionLocal()
     try:
+        # Проверяем, существует ли пользователь с таким telegram_id и sport
+        existing_user = db.query(User).filter_by(
+            telegram_id=user_data.get("telegram_id"),
+            sport=user_data.get("sport")
+        ).first()
+
+        if existing_user:
+            print("Ошибка: Пользователь уже зарегистрирован в этом виде спорта.")
+            return
+                
         user = User(
-            sport=user_data.get("sport"),
+            sport=user_data.get("sports"),
             role=user_data.get("role"),
             photo_path=user_data.get("photo"),
             telegram_id=user_data.get("telegram_id")

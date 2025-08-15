@@ -1,11 +1,10 @@
 from telegram import Update
-from telegram.ext import ContextTypes, ConversationHandler
-# from database.models import User, SessionLocal  # Импортируем модели базы данных
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters, CommandHandler, CallbackQueryHandler
 from utils.keyboards import Keyboards  # Импортируем клавиатуры
 from tables import save_to_database
 
 # Определяем состояния диалога
-SPORT, ROLE, PHOTO, CONFIRM_PROFILE = range(4)
+SPORT, ROLE, PHOTO, CONFIRM_PROFILE_OR_PROPOSE_GAME, CITY = range(5)
 
 async def start_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -27,7 +26,8 @@ async def get_sport(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()  # Подтверждаем получение callback-запроса
 
     sport = query.data  # Получаем данные из callback_data
-    context.user_data['sport'] = sport  # Сохраняем вид спорта в контексте
+    # Добавляем вид спорта в контекст
+    context.user_data["sports"] = sport
 
     await query.edit_message_text(
         "Выберите вашу роль:", 
@@ -63,27 +63,73 @@ async def save_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Ваш профиль сохранен! Хотите опубликовать его?",
         reply_markup=Keyboards.get_confirmation_buttons()
     )
-    return CONFIRM_PROFILE  # Переходим к состоянию подтверждения
+    return CONFIRM_PROFILE_OR_PROPOSE_GAME  # Переходим к состоянию подтверждения
 
 
-async def confirm_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# async def confirm_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     query = update.callback_query
+#     await query.answer()  # Подтверждаем получение callback-запроса
+
+#     confirmation = query.data  # Получаем данные из callback_data
+
+#     if confirmation == "confirm_yes":
+#         # Логика сохранения профиля в базе данных
+#         user_data = context.user_data
+#         # sport = user_data.get('sport')
+#         # role = user_data.get('role')
+#         # photo = user_data.get('photo')
+
+#         # Пример сохранения в базу данных
+#         save_to_database(context.user_data)
+
+#         await query.edit_message_text("Профиль успешно опубликован!")
+#     else:
+#         await query.edit_message_text("Публикация отменена.")
+
+#     return ConversationHandler.END  # Завершаем диалог
+
+async def confirm_profile_or_propose_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()  # Подтверждаем получение callback-запроса
-
     confirmation = query.data  # Получаем данные из callback_data
 
     if confirmation == "confirm_yes":
         # Логика сохранения профиля в базе данных
         user_data = context.user_data
-        # sport = user_data.get('sport')
-        # role = user_data.get('role')
-        # photo = user_data.get('photo')
-
-        # Пример сохранения в базу данных
-        save_to_database(context.user_data)
-
+        save_to_database(user_data)
         await query.edit_message_text("Профиль успешно опубликован!")
+        
+        # Проверяем, хочет ли пользователь предложить игру
+        await query.message.reply_text(
+            "Хотите предложить игру прямо сейчас?",
+            reply_markup=Keyboards.get_confirmation_buttons()
+        )
+        return CITY  # Переходим к состоянию предложения игры
+
     else:
         await query.edit_message_text("Публикация отменена.")
+        return ConversationHandler.END  # Завершаем диалог
 
-    return ConversationHandler.END  # Завершаем диалог
+
+async def propose_game_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()  # Подтверждаем получение callback-запроса
+    if query.data == "confirm_yes":
+        await query.edit_message_text("Введите город:")
+        return CITY  # Переходим к состоянию ввода города
+    else:
+        await query.edit_message_text("Регистрация завершена!")
+        return ConversationHandler.END  # Завершаем диалог
+
+# Конверсейшн-хендлер для регистрации
+conv_handler = ConversationHandler(
+    entry_points=[CommandHandler('start', start_registration)],
+    states={
+        SPORT: [CallbackQueryHandler(get_sport)],
+        ROLE: [CallbackQueryHandler(get_role)],
+        PHOTO: [MessageHandler(filters.PHOTO & ~filters.COMMAND, save_profile)],
+        CONFIRM_PROFILE_OR_PROPOSE_GAME: [CallbackQueryHandler(confirm_profile_or_propose_game)],
+        CITY: [CallbackQueryHandler(propose_game_city)]
+    },
+    fallbacks=[]
+)

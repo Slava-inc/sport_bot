@@ -92,3 +92,25 @@
 Этот проект лицензирован под [MIT License](LICENSE).
 
 ---
+
+```
+sport_bot
+├─ config.py
+├─ database
+│  └─ models.py
+├─ handlers
+│  ├─ game_proposals.py
+│  ├─ match_results.py
+│  ├─ partner_search.py
+│  ├─ registration.py
+│  └─ subscription.py
+├─ main.py
+├─ README.md
+├─ requirements.txt
+├─ services
+│  └─ payment_service.py
+├─ tables.py
+└─ utils
+   └─ keyboards.py
+
+```
